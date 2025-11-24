@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mercy Flights - Scenario Builder & Library</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* --- BRANDING COLORS --- */
+        :root {
+            --mercy-dark: #003366;
+            --mercy-light: #4a90e2;
+            --mercy-red: #dc2626;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #f3f4f6;
+            -webkit-print-color-adjust: exact;
+        }
+
+        /* --- FORM ELEMENTS --- */
+        .editable-field {
+            background: transparent;
+            border-bottom: 1px solid #e5e7eb;
+            width: 100%;
+            padding: 6px 0;
+            transition: border-color 0.2s;
+            border-radius: 0;
+            color: #1f2937;
+        }
+        .editable-field:focus {
+            outline: none;
+            border-bottom: 2px solid var(--mercy-light);
+            background-color: rgba(74, 144, 226, 0.05);
+        }
+        textarea.editable-field {
+            resize: vertical; 
+            min-height: 2.5em;
+        }
+        
+        input[type="text"] {
+            display: block;
+        }
+
+        /* --- SCENARIO CARDS --- */
+        .scenario-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-left: 6px solid var(--mercy-dark);
+            break-inside: avoid; 
+        }
+        .card-blue { border-left-color: var(--mercy-light); }
+        .card-red { border-left-color: var(--mercy-red); }
+        .card-gray { border-left-color: #6b7280; background-color: #f9fafb; }
+
+        /* --- TABS --- */
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            border-bottom: 2px solid transparent;
+            color: #6b7280;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            border-bottom-color: var(--mercy-dark);
+            color: var(--mercy-dark);
+        }
+
+        /* --- PRINT STYLES --- */
+        @media print {
+            @page { margin: 0.4in; size: portrait; }
+            
+            body { 
+                background-color: white !important; 
+                color: black !important; 
+                font-size: 10pt; 
+                font-family: 'Times New Roman', serif;
+            }
+
+            .no-print, .app-bar, .btn, .modal, button, .fa-trash, .fa-plus, #logoUploader, .cursor-pointer, .tab-nav { 
+                display: none !important; 
+            }
+            
+            .max-w-5xl { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+
+            input, textarea, select {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-family: inherit;
+                resize: none !important;
+                overflow: visible;
+                font-size: 10pt;
+                color: black !important;
+                width: 100% !important;
+                height: auto !important;
+            }
+            
+            input::placeholder, textarea::placeholder { color: transparent; }
+
+            .scenario-card {
+                box-shadow: none !important;
+                border: none !important;
+                border-bottom: 1px solid #000 !important;
+                border-left: none !important;
+                margin-bottom: 0.5rem !important;
+                padding: 0.5rem 0 !important;
+                page-break-inside: avoid;
+                background-color: transparent !important;
+            }
+            
+            h1, h2, h3 { color: #003366 !important; page-break-after: avoid; margin-bottom: 4px !important; }
+            h2 { font-size: 14pt !important; border-bottom: 2px solid #003366; }
+            h3 { font-size: 12pt !important; font-weight: bold; text-transform: uppercase; color: #4a90e2 !important; }
+
+            /* --- VITALS TABLE FIX --- */
+            #vitals_wrapper {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr 1fr !important; 
+                gap: 10px !important;
+                width: 100% !important;
+            }
+            
+            .tab-content {
+                display: block !important; 
+                border: 1px solid #ccc !important;
+                padding: 5px !important;
+                page-break-inside: avoid;
+            }
+            
+            .print-only-header { 
+                display: block !important; 
+                text-align: center; 
+                font-weight: bold; 
+                border-bottom: 1px solid #ccc;
+                margin-bottom: 5px;
+                color: #003366;
+            }
+            
+            .tab-content .grid {
+                display: grid !important;
+                grid-template-columns: 1fr 2fr !important; 
+                gap: 2px !important;
+            }
+            .tab-content .grid-cols-2 { display: contents !important; }
+
+            /* Flowchart Cleanup */
+            .flow-row {
+                display: grid !important;
+                grid-template-columns: 1fr 0.1fr 1fr 0.1fr 1fr 0.1fr 1fr !important;
+                border-bottom: 1px solid #eee;
+                padding-bottom: 5px;
+                margin-bottom: 5px;
+                page-break-inside: avoid;
+                align-items: start;
+            }
+            #logicContainer { display: block !important; }
+            .flow-node { 
+                border: 1px solid #000 !important; 
+                background-color: white !important; 
+                padding: 4px !important;
+                font-size: 9pt;
+            }
+            .arrow-connector { color: black !important; text-align: center; }
+            
+            .md\:grid-cols-2 { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 20px; }
+            .lg\:grid-cols-3 { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 10px; }
+            .lg\:grid-cols-2 { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px; }
+
+            #apparatusDisplay { 
+                display: block !important; 
+                text-align: right; 
+                font-weight: bold; 
+                color: #003366 !important;
+            }
+        }
+
+        .flow-node {
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .print-only-header { display: none; }
+    </style>
+</head>
+<body class="pb-32">
+
+    <!-- TOP APP BAR -->
+    <div class="sticky top-0 z-50 px-6 py-4 flex justify-between items-center shadow-md no-print" style="background: linear-gradient(135deg, #003366 0%, #001f3f 100%); color: white;">
+        <div class="flex items-center gap-4">
+            <i class="fas fa-helicopter text-2xl"></i>
+            <div>
+                <h1 class="font-bold text-xl leading-tight">Mercy Flights Scenario Builder</h1>
+                <p class="text-xs text-blue-200">CAMTS | FP-C | CFRN | CCT</p>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="openImportModal()" class="px-4 py-2 rounded text-sm font-semibold bg-white/10 hover:bg-white/20 transition flex items-center gap-2 border border-white/20">
+                <i class="fas fa-file-import"></i> Import Data
+            </button>
+            <button onclick="openHistory()" class="px-4 py-2 rounded text-sm font-semibold bg-white/10 hover:bg-white/20 transition flex items-center gap-2 border border-white/20">
+                <i class="fas fa-history"></i> Saved Files
+            </button>
+            <button onclick="saveCurrent()" class="px-4 py-2 rounded text-sm font-bold bg-green-600 hover:bg-green-500 text-white shadow transition flex items-center gap-2">
+                <i class="fas fa-save"></i> Save
+            </button>
+            <button onclick="preparePrint()" class="px-4 py-2 rounded text-sm font-bold bg-white text-[#003366] shadow transition flex items-center gap-2 hover:bg-gray-100">
+                <i class="fas fa-print"></i> Print PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="max-w-5xl mx-auto p-6 md:p-10" id="scenarioContainer">
+
+        <!-- HEADER -->
+        <header class="flex flex-col md:flex-row justify-between items-end mb-8 border-b-4 pb-6" style="border-color: #003366;">
+            <div class="mb-4 md:mb-0 w-full md:w-auto">
+                <img src="MercyFlightsLogo.png" 
+                     onerror="this.onerror=null; this.src='https://placehold.co/300x100/003366/ffffff?text=LOGO+NOT+FOUND';" 
+                     alt="Mercy Flights Logo" 
+                     class="h-24 object-contain block cursor-pointer" 
+                     id="mainLogo"
+                     onclick="document.getElementById('logoUploader').click()"
+                     title="Click to upload logo">
+                <input type="file" id="logoUploader" class="hidden no-print" onchange="updateLogo(this)">
+            </div>
+            <div class="text-right w-full">
+                <h1 class="text-4xl font-extrabold uppercase tracking-tight" style="color: #003366;">Critical Care Scenario</h1>
+                <div class="flex flex-col items-end mt-2 gap-1">
+                    <select id="category" class="editable-field text-right text-xl font-semibold text-gray-600 w-80 text-right cursor-pointer">
+                        <option>Trauma / Scene</option>
+                        <option>Trauma / IFT</option>
+                        <option>Medical / Scene</option>
+                        <option>Medical / IFT</option>
+                        <option>Cardiac / STEMI</option>
+                        <option>Cardiac / Post-Arrest</option>
+                        <option>Neurological / Stroke</option>
+                        <option>Respiratory / Ventilator</option>
+                        <option>Pediatric / Scene</option>
+                        <option>Pediatric / IFT</option>
+                        <option>Neonatal / Isolette</option>
+                        <option>High Risk OB</option>
+                        <option>Burn</option>
+                        <option>Sepsis</option>
+                        <option>Toxicology</option>
+                        <option>Environmental</option>
+                    </select>
+                    <input type="text" id="apparatusDisplay" placeholder="Apparatus Type" class="editable-field text-right text-sm font-medium text-[#4a90e2] w-64">
+                </div>
+            </div>
+        </header>
+
+        <!-- TITLE & OBJECTIVES -->
+        <section class="mb-8">
+            <input type="text" id="scenarioTitle" placeholder="SCENARIO TITLE" class="text-4xl font-bold text-gray-800 w-full mb-4 border-b-2 border-transparent hover:border-gray-200 focus:border-[#4a90e2] bg-transparent">
+            
+            <div class="scenario-card">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2 flex items-center gap-2" style="color: #003366;">
+                    <i class="fas fa-bullseye text-[#4a90e2]"></i> Learning Objectives
+                </h2>
+                <textarea id="objectives" rows="4" class="editable-field text-gray-700" placeholder="1. Identify...&#10;2. Treat...&#10;3. Manage..."></textarea>
+            </div>
+        </section>
+
+        <!-- PHASE 1: DISPATCH & LOGISTICS -->
+        <section class="mb-8">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow" style="background-color: #003366;">1</div>
+                <h2 class="text-2xl font-bold text-gray-700">Dispatch & Logistics</h2>
+            </div>
+
+            <div class="scenario-card">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Dispatch / Brief / Operational Challenges</label>
+                <textarea id="dispatch" rows="6" class="editable-field bg-blue-50 p-2 rounded text-sm" placeholder="Detailed dispatch info, weather, and hazards..."></textarea>
+            </div>
+            
+            <div class="scenario-card bg-gray-50" style="border-left-color: #6b7280;">
+                <h3 class="font-bold mb-3 text-gray-700">Setup & Moulage Instructions</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Mannequin Setup</label>
+                        <textarea id="setup_mannequin" rows="4" class="editable-field text-sm" placeholder="e.g., Place 3G in prone position..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Required Equipment/Skills</label>
+                        <textarea id="setup_equipment" rows="4" class="editable-field text-sm" placeholder="e.g., Video Laryngoscope..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PHASE 2: CLINICAL DATA -->
+        <section class="mb-8">
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow" style="background-color: #003366;">2</div>
+                    <h2 class="text-2xl font-bold text-gray-700">History, Vitals & Diagnostics</h2>
+                </div>
+                <div class="flex gap-2 no-print">
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" class="form-checkbox text-[#003366]" checked onchange="toggleSection('primarySurveySection', this)">
+                        <span class="ml-2 text-sm text-gray-600">Primary Survey</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" class="form-checkbox text-[#003366]" checked onchange="toggleSection('secondarySurveySection', this)">
+                        <span class="ml-2 text-sm text-gray-600">Secondary Survey</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- PRIMARY SURVEY (TOGGLEABLE) -->
+            <div id="primarySurveySection" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="scenario-card card-blue">
+                    <h3 class="font-bold mb-3" style="color: #003366;">General Impression (PAT) & Primary Survey</h3>
+                    <textarea id="generalImpression" rows="3" class="editable-field mb-4" placeholder="Patient appearance..."></textarea>
+                    <div class="space-y-2">
+                        <div class="flex gap-2 items-baseline"><label class="w-24 text-right text-xs font-bold text-gray-500">Airway:</label><input id="airway" type="text" class="editable-field font-medium"></div>
+                        <div class="flex gap-2 items-baseline"><label class="w-24 text-right text-xs font-bold text-gray-500">Breathing:</label><input id="breathing" type="text" class="editable-field font-medium"></div>
+                        <div class="flex gap-2 items-baseline"><label class="w-24 text-right text-xs font-bold text-gray-500">Circulation:</label><input id="circulation" type="text" class="editable-field font-medium"></div>
+                        <div class="flex gap-2 items-baseline"><label class="w-24 text-right text-xs font-bold text-gray-500">Disability:</label><input id="disability" type="text" class="editable-field font-medium"></div>
+                        <div class="flex gap-2 items-baseline"><label class="w-24 text-right text-xs font-bold text-gray-500">Exposure:</label><input id="exposure" type="text" class="editable-field font-medium"></div>
+                    </div>
+                </div>
+                <div class="scenario-card">
+                    <h3 class="font-bold mb-3" style="color: #003366;">SAMPLE History</h3>
+                    <div class="space-y-2">
+                        <div class="flex gap-2"><label class="text-xs font-bold text-gray-400 w-20">CC:</label><input id="cc" type="text" class="editable-field"></div>
+                        <div class="flex gap-2"><label class="text-xs font-bold text-gray-400 w-20">HPI:</label><textarea id="hpi" rows="2" class="editable-field"></textarea></div>
+                        <div class="flex gap-2"><label class="text-xs font-bold text-red-400 w-20">Allergies:</label><input id="allergies" type="text" class="editable-field text-red-600 font-bold"></div>
+                        <div class="flex gap-2"><label class="text-xs font-bold text-gray-400 w-20">Meds:</label><textarea id="meds" rows="2" class="editable-field"></textarea></div>
+                        <div class="flex gap-2"><label class="text-xs font-bold text-gray-400 w-20">PMHx:</label><textarea id="pmhx" rows="2" class="editable-field"></textarea></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VITALS TABS (Redesigned for Print) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="scenario-card bg-gray-50 lg:col-span-1 p-4">
+                    <h3 class="font-bold mb-2 border-b pb-2" style="color: #003366;">Vital Signs Trend</h3>
+                    
+                    <!-- Tabs Navigation -->
+                    <div class="tab-nav flex border-b mb-4 text-sm no-print">
+                        <button onclick="openTab('vitals_initial')" class="tab-btn active" id="btn_initial">Initial</button>
+                        <button onclick="openTab('vitals_15min')" class="tab-btn" id="btn_15min">15 Min</button>
+                        <button onclick="openTab('vitals_arrival')" class="tab-btn" id="btn_arrival">Arrival</button>
+                    </div>
+
+                    <!-- PRINT CONTAINER FOR VITALS -->
+                    <div id="vitals_wrapper">
+                        
+                        <!-- Initial Vitals -->
+                        <div id="vitals_initial" class="tab-content">
+                            <h4 class="print-only-header text-xs font-bold uppercase mb-2">Initial Vitals</h4>
+                            <div class="space-y-1 text-sm">
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">BP</label><input id="bp_1" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">HR</label><input id="hr_1" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">RR</label><input id="rr_1" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">SpO2</label><input id="spo2_1" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">EtCO2</label><input id="etco2_1" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">Temp</label><input id="temp_1" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">BGL</label><input id="bgl_1" class="editable-field bg-white text-center border rounded"></div>
+                            </div>
+                        </div>
+
+                        <!-- 15 Min Vitals -->
+                        <div id="vitals_15min" class="tab-content hidden">
+                            <h4 class="print-only-header text-xs font-bold uppercase mb-2">15 Min Vitals</h4>
+                            <div class="space-y-1 text-sm">
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">BP</label><input id="bp_2" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">HR</label><input id="hr_2" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">RR</label><input id="rr_2" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">SpO2</label><input id="spo2_2" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">EtCO2</label><input id="etco2_2" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">Temp</label><input id="temp_2" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">BGL</label><input id="bgl_2" class="editable-field bg-white text-center border rounded"></div>
+                            </div>
+                        </div>
+
+                        <!-- Arrival Vitals -->
+                        <div id="vitals_arrival" class="tab-content hidden">
+                            <h4 class="print-only-header text-xs font-bold uppercase mb-2">Arrival Vitals</h4>
+                            <div class="space-y-1 text-sm">
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">BP</label><input id="bp_3" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">HR</label><input id="hr_3" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">RR</label><input id="rr_3" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">SpO2</label><input id="spo2_3" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">EtCO2</label><input id="etco2_3" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">Temp</label><input id="temp_3" class="editable-field bg-white text-center border rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><label class="text-gray-500 font-bold">BGL</label><input id="bgl_3" class="editable-field bg-white text-center border rounded"></div>
+                            </div>
+                        </div>
+
+                    </div> <!-- End Vitals Wrapper -->
+
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <label class="text-xs font-bold text-gray-400">ECG / Monitor</label>
+                        <textarea id="ecg" rows="3" class="editable-field bg-white border rounded p-2 text-sm" placeholder="Sinus Rhythm..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Lab Values -->
+                <div class="scenario-card bg-blue-50 border-mercy-light lg:col-span-1">
+                    <h3 class="font-bold mb-4 border-b pb-2" style="color: #4a90e2;">Lab Values (IFT/CCT)</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between"><label>pH/pCO2/pO2:</label><input id="lab_abg" class="editable-field w-32 text-right bg-white px-1" placeholder="- / - / -"></div>
+                        <div class="flex justify-between"><label>HCO3/BE:</label><input id="lab_hco3" class="editable-field w-32 text-right bg-white px-1" placeholder="- / -"></div>
+                        <div class="flex justify-between"><label>Na/K/Cl:</label><input id="lab_lytes" class="editable-field w-32 text-right bg-white px-1" placeholder="- / - / -"></div>
+                        <div class="flex justify-between"><label>BUN/Cr:</label><input id="lab_renal" class="editable-field w-32 text-right bg-white px-1" placeholder="- / -"></div>
+                        <div class="flex justify-between"><label>Hgb/Hct/Plt:</label><input id="lab_heme" class="editable-field w-32 text-right bg-white px-1" placeholder="- / - / -"></div>
+                        <div class="flex justify-between"><label>Lactate:</label><input id="lab_lac" class="editable-field w-32 text-right bg-white px-1" placeholder="-"></div>
+                        <div class="flex justify-between"><label>Trop/BNP:</label><input id="lab_cardiac" class="editable-field w-32 text-right bg-white px-1" placeholder="- / -"></div>
+                    </div>
+                </div>
+
+                <!-- Detailed Physical Exam -->
+                <div id="secondarySurveySection" class="scenario-card lg:col-span-1">
+                    <h3 class="font-bold mb-4" style="color: #003366;">Secondary Physical Exam</h3>
+                    <div class="space-y-3">
+                        <div><label class="text-xs font-bold text-gray-400">Neuro / GCS</label><input id="neuro" class="editable-field"></div>
+                        <div><label class="text-xs font-bold text-gray-400">HEENT</label><input id="heent" class="editable-field"></div>
+                        <div><label class="text-xs font-bold text-gray-400">Chest / Lungs</label><input id="chest" class="editable-field"></div>
+                        <div><label class="text-xs font-bold text-gray-400">Abd / Pelvis</label><input id="abd" class="editable-field"></div>
+                        <div><label class="text-xs font-bold text-gray-400">Extremities</label><input id="extremities" class="editable-field"></div>
+                        <div><label class="text-xs font-bold text-gray-400">Skin</label><input id="skin" class="editable-field"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PHASE 3: LOGIC FLOW -->
+        <div class="page-break"></div>
+        <section class="mb-8">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow" style="background-color: #003366;">3</div>
+                <h2 class="text-2xl font-bold text-gray-700">Simulation Logic & Flow</h2>
+            </div>
+
+            <div class="scenario-card card-blue bg-blue-50">
+                <div class="flex justify-between items-center mb-6 border-b pb-2">
+                    <h3 class="font-bold" style="color: #003366;">Realiti360 Instructor Guide (Triggers)</h3>
+                    <button onclick="addLogicRow()" class="no-print text-xs text-white px-2 py-1 rounded hover:bg-blue-600" style="background-color: #4a90e2;"><i class="fas fa-plus"></i> Add Branch</button>
+                </div>
+                
+                <div id="logicContainer" class="space-y-6">
+                    <!-- Flowchart rows go here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- PHASE 4: INSTRUCTOR GUIDE -->
+        <section class="mt-8 border-t-8 pt-8" style="border-color: #003366;">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3" style="color: #003366;">
+                <i class="fas fa-chalkboard-teacher"></i> Instructor / Evaluator Guide
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- FAIL CRITERIA -->
+                <div class="scenario-card card-red">
+                    <h3 class="font-bold text-red-700 mb-4 border-b border-red-100 pb-2">Critical Fail Criteria</h3>
+                    <textarea id="criticalFails" rows="6" class="editable-field w-full text-sm" placeholder="- Fails to manage airway...&#10;- Unsafe scene..."></textarea>
+                </div>
+
+                <!-- DISCUSSION -->
+                <div class="scenario-card">
+                    <h3 class="font-bold mb-4 border-b pb-2" style="color: #003366;">Debriefing & Standards (CAMTS/NRP/PALS/TPATC)</h3>
+                    <textarea id="debrief" rows="6" class="editable-field w-full text-sm" placeholder="Discuss pathophysiology..."></textarea>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- IMPORT MODAL -->
+    <div id="importModal" class="modal fixed inset-0 hidden items-center justify-center z-50 no-print" style="background-color: rgba(0,0,0,0.5);">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg p-6 m-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold" style="color: #003366;">Import Scenario JSON</h2>
+                <button onclick="document.getElementById('importModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+            </div>
+            <textarea id="importText" rows="10" class="w-full border rounded p-2 text-xs font-mono mb-4" placeholder="Paste JSON here..."></textarea>
+            <button onclick="importScenario()" class="w-full bg-[#4a90e2] hover:bg-blue-600 text-white py-2 rounded font-bold">Load Data</button>
+        </div>
+    </div>
+
+    <!-- HISTORY MODAL -->
+    <div id="historyModal" class="modal fixed inset-0 hidden items-center justify-center z-50 no-print" style="background-color: rgba(0,0,0,0.5);">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg p-6 m-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold" style="color: #003366;">Saved Scenarios</h2>
+                <button onclick="document.getElementById('historyModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="historyList" class="space-y-2 max-h-96 overflow-y-auto">
+                <!-- Items injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. INITIALIZATION ---
+        window.onload = function() {
+            addLogicRow();
+            
+            // Auto-resize listeners
+            document.querySelectorAll('textarea').forEach(tx => {
+                tx.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = (this.scrollHeight) + 'px';
+                });
+            });
+        };
+        
+        function toggleSection(sectionId, checkbox) {
+            const section = document.getElementById(sectionId);
+            if (checkbox.checked) {
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
+        }
+        
+        function openTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.remove('hidden');
+            const btnId = 'btn_' + tabId.split('_')[1];
+            document.getElementById(btnId).classList.add('active');
+        }
+
+        function openImportModal() {
+            document.getElementById('importModal').classList.remove('hidden');
+            document.getElementById('importModal').classList.add('flex');
+        }
+
+        // --- 2. LOGIC FLOWCHART ---
+        function addLogicRow(trigger='', action='', cue='', newVitals='') {
+            const container = document.getElementById('logicContainer');
+            const div = document.createElement('div');
+            div.className = "flex flex-col md:flex-row items-stretch md:items-center gap-2 flow-row mb-6";
+            div.innerHTML = `
+                <div class="flow-node flex-1 border-gray-300">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase mb-1">Realiti360 Trigger / Time</div>
+                    <textarea class="editable-field text-sm" placeholder="e.g. Student gives Epi OR @ 5 mins...">${trigger}</textarea>
+                </div>
+                <div class="arrow-connector hidden md:flex"><i class="fas fa-arrow-right"></i></div>
+                
+                <div class="flow-node flex-1 bg-blue-50" style="border-color: #4a90e2;">
+                    <div class="text-[10px] font-bold uppercase mb-1" style="color: #4a90e2;">Instructor Action (Sim Change)</div>
+                    <textarea class="editable-field text-sm" placeholder="Change HR to 150, Drop SpO2...">${action}</textarea>
+                </div>
+                <div class="arrow-connector hidden md:flex"><i class="fas fa-arrow-right"></i></div>
+                
+                <div class="flow-node flex-1 border-gray-300">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase mb-1">New Vitals (Physiological Response)</div>
+                    <textarea class="editable-field text-sm" placeholder="BP: 120/80, HR: 88...">${newVitals}</textarea>
+                </div>
+                 <div class="arrow-connector hidden md:flex"><i class="fas fa-arrow-right"></i></div>
+
+                <div class="flow-node flex-1 border-gray-300">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase mb-1">Expected Outcome / Cue / Hard Stop</div>
+                    <textarea class="editable-field text-sm" placeholder="Patient complains of... OR HARD STOP: Failed Airway">${cue}</textarea>
+                </div>
+                <button onclick="this.parentElement.remove()" class="no-print text-red-300 hover:text-red-500 px-2"><i class="fas fa-trash"></i></button>
+            `;
+            container.appendChild(div);
+        }
+
+        // --- 3. IMPORT FUNCTION ---
+        function importScenario() {
+            const jsonText = document.getElementById('importText').value;
+            try {
+                const json = JSON.parse(jsonText);
+                
+                // Helper: Safe Set
+                const setVal = (id, val) => {
+                    const el = document.getElementById(id);
+                    if(el) el.value = val || "";
+                };
+
+                setVal('scenarioTitle', json.title);
+                setVal('category', json.category || "General");
+                setVal('apparatusDisplay', json.apparatus || ""); // Assuming apparatus field exists in JSON
+                setVal('objectives', json.objectives); // Expecting string
+                setVal('dispatch', json.dispatch);
+                setVal('setup_mannequin', json.setup_mannequin);
+                setVal('setup_equipment', json.setup_equipment);
+                setVal('generalImpression', json.generalImpression);
+                
+                setVal('airway', json.airway);
+                setVal('breathing', json.breathing);
+                setVal('circulation', json.circulation);
+                setVal('disability', json.disability);
+                setVal('exposure', json.exposure);
+                
+                setVal('cc', json.cc);
+                setVal('hpi', json.hpi);
+                setVal('allergies', json.allergies);
+                setVal('meds', json.meds);
+                setVal('pmhx', json.pmhx);
+                setVal('weight', json.weight);
+                setVal('ecg', json.ecg);
+                
+                // Vitals
+                const mapVitals = (prefix, data) => {
+                    if(data) {
+                        setVal(prefix + 'bp', data.BP);
+                        setVal(prefix + 'hr', data.HR);
+                        setVal(prefix + 'rr', data.RR);
+                        setVal(prefix + 'spo2', data.SpO2);
+                        setVal(prefix + 'etco2', data.EtCO2);
+                        setVal(prefix + 'temp', data.Temp);
+                        setVal(prefix + 'bgl', data.BGL);
+                    }
+                };
+                
+                mapVitals('bp_1', {BP: json.vitals_initial?.BP}); // Fallback logic can be removed if IDs are consistent
+                if(json.vitals_initial) {
+                     setVal('bp_1', json.vitals_initial.BP); setVal('hr_1', json.vitals_initial.HR); setVal('rr_1', json.vitals_initial.RR);
+                     setVal('spo2_1', json.vitals_initial.SpO2); setVal('etco2_1', json.vitals_initial.EtCO2); setVal('temp_1', json.vitals_initial.Temp); setVal('bgl_1', json.vitals_initial.BGL);
+                }
+                if(json.vitals_15min) {
+                     setVal('bp_2', json.vitals_15min.BP); setVal('hr_2', json.vitals_15min.HR); setVal('rr_2', json.vitals_15min.RR);
+                     setVal('spo2_2', json.vitals_15min.SpO2); setVal('etco2_2', json.vitals_15min.EtCO2); setVal('temp_2', json.vitals_15min.Temp); setVal('bgl_2', json.vitals_15min.BGL);
+                }
+                if(json.vitals_arrival) {
+                     setVal('bp_3', json.vitals_arrival.BP); setVal('hr_3', json.vitals_arrival.HR); setVal('rr_3', json.vitals_arrival.RR);
+                     setVal('spo2_3', json.vitals_arrival.SpO2); setVal('etco2_3', json.vitals_arrival.EtCO2); setVal('temp_3', json.vitals_arrival.Temp); setVal('bgl_3', json.vitals_arrival.BGL);
+                }
+
+                if(json.labs) {
+                    setVal('lab_abg', json.labs.abg);
+                    setVal('lab_hco3', json.labs.hco3);
+                    setVal('lab_lytes', json.labs.lytes);
+                    setVal('lab_renal', json.labs.renal);
+                    setVal('lab_heme', json.labs.heme);
+                    setVal('lab_lac', json.labs.lac);
+                    setVal('lab_cardiac', json.labs.cardiac);
+                }
+
+                if(json.physical) {
+                    setVal('neuro', json.physical.neuro);
+                    setVal('heent', json.physical.heent);
+                    setVal('chest', json.physical.chest);
+                    setVal('abd', json.physical.abd);
+                    setVal('extremities', json.physical.ext);
+                    setVal('skin', json.physical.skin);
+                }
+
+                document.getElementById('logicContainer').innerHTML = ''; 
+                if(json.logic) {
+                    json.logic.forEach(l => addLogicRow(l.trigger, l.action, l.cue, l.newVitals));
+                }
+
+                setVal('criticalFails', json.criticalFails);
+                setVal('debrief', json.debrief);
+
+                // Resize
+                document.querySelectorAll('textarea').forEach(tx => {
+                    tx.style.height = 'auto';
+                    tx.style.height = (tx.scrollHeight) + 'px';
+                });
+
+                document.getElementById('importModal').classList.add('hidden');
+                alert("Scenario Loaded Successfully!");
+
+            } catch (e) {
+                alert("Error parsing JSON: " + e.message);
+            }
+        }
+
+        // --- 4. SAVE / LOAD ---
+        function saveCurrent() {
+            const title = document.getElementById('scenarioTitle').value || 'Untitled';
+            const data = {
+                title: title,
+                date: new Date().toLocaleDateString(),
+                html: document.getElementById('scenarioContainer').innerHTML
+            };
+            let saves = JSON.parse(localStorage.getItem('mercy_scenarios') || "[]");
+            saves.push(data);
+            localStorage.setItem('mercy_scenarios', JSON.stringify(saves));
+            alert("Scenario Saved!");
+        }
+
+        function openHistory() {
+            const saves = JSON.parse(localStorage.getItem('mercy_scenarios') || "[]");
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            
+            if(saves.length === 0) list.innerHTML = '<p class="text-gray-500 text-center">No saved scenarios.</p>';
+
+            saves.forEach((s, index) => {
+                const item = document.createElement('div');
+                item.className = "flex justify-between items-center p-3 border rounded hover:bg-gray-50";
+                item.innerHTML = `
+                    <div>
+                        <div class="font-bold text-mercy-dark">${s.title}</div>
+                        <div class="text-xs text-gray-400">${s.date}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="loadScenario(${index})" class="text-blue-500 hover:underline text-sm">Load</button>
+                        <button onclick="deleteScenario(${index})" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+            
+            document.getElementById('historyModal').classList.remove('hidden');
+            document.getElementById('historyModal').classList.add('flex');
+        }
+
+        function loadScenario(index) {
+            const saves = JSON.parse(localStorage.getItem('mercy_scenarios') || "[]");
+            if(saves[index]) {
+                document.getElementById('scenarioContainer').innerHTML = saves[index].html;
+                document.querySelectorAll('textarea').forEach(tx => {
+                    tx.addEventListener('input', function() {
+                        this.style.height = 'auto';
+                        this.style.height = (this.scrollHeight) + 'px';
+                    });
+                });
+                document.getElementById('historyModal').classList.add('hidden');
+            }
+        }
+        
+        function deleteScenario(index) {
+            let saves = JSON.parse(localStorage.getItem('mercy_scenarios') || "[]");
+            saves.splice(index, 1);
+            localStorage.setItem('mercy_scenarios', JSON.stringify(saves));
+            openHistory();
+        }
+
+        // --- 5. UTILS ---
+        function updateLogo(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('mainLogo').src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        function preparePrint() {
+             document.querySelectorAll('textarea').forEach(tx => {
+                tx.style.height = 'auto';
+                tx.style.height = (tx.scrollHeight) + 'px';
+            });
+            window.print();
+        }
+    </script>
+</body>
+</html>
